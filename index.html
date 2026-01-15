@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<link rel="manifest" href="manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+
+    <meta charset="UTF-8">
+    <title>Fugu USB Terminal</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: #00ff00; }
+        #terminal { background: #000; height: 300px; overflow-y: scroll; border: 1px solid #444; padding: 10px; margin-bottom: 10px; }
+        input { background: #222; color: #00ff00; border: 1px solid #444; padding: 8px; width: 70%; }
+        button { padding: 8px 15px; cursor: pointer; background: #444; color: white; border: none; }
+        button:hover { background: #666; }
+    </style>
+</head>
+<body>
+    <h2>Telecom WebUSB Terminal</h2>
+    <div id="terminal"></div>
+    
+    <button id="btnConnect">Conectar Dispositivo</button>
+    <br><br>
+    <input type="text" id="cmdInput" placeholder="Digite o comando (ex: get status)">
+    <button id="btnSend">Enviar</button>
+
+    <script>
+        let device;
+        const terminal = document.getElementById('terminal');
+
+        // Função para imprimir no log do terminal
+        const log = (msg) => {
+            terminal.innerHTML += `<div>> ${msg}</div>`;
+            terminal.scrollTop = terminal.scrollHeight;
+        };
+
+        // PASSO 1: Conectar e Abrir o Dispositivo
+        document.getElementById('btnConnect').onclick = async () => {
+            try {
+                // Filtros vazios [] listam todos os dispositivos USB
+                device = await navigator.usb.requestDevice({ filters: [] });
+                
+                await device.open();
+                await device.selectConfiguration(1);
+                await device.claimInterface(0); // Ajuste o ID conforme o hardware
+                
+                log(`Conectado a: ${device.productName}`);
+            } catch (err) {
+                log(`Erro: ${err.message}`);
+            }
+        };
+
+        // PASSO 2: Enviar dados (TransferOut)
+        document.getElementById('btnSend').onclick = async () => {
+            if (!device) return log("Conecte um dispositivo primeiro!");
+            
+            const command = document.getElementById('cmdInput').value + "\n";
+            const encoder = new TextEncoder();
+            const data = encoder.encode(command);
+
+            try {
+                // '1' é um endpoint comum, mas depende do hardware
+                await device.transferOut(1, data);
+                log(`Enviado: ${command}`);
+                readResponse();
+            } catch (err) {
+                log(`Erro ao enviar: ${err.message}`);
+            }
+        };
+
+        // PASSO 3: Ler resposta (TransferIn)
+        const readResponse = async () => {
+            try {
+                const result = await device.transferIn(1, 64);
+                const decoder = new TextDecoder();
+                log(`Resposta: ${decoder.decode(result.data)}`);
+            } catch (err) {
+                log(`Erro na leitura: ${err.message}`);
+            }
+        };
+    </script>
+</body>
+</html>

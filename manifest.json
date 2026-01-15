@@ -1,0 +1,15 @@
+{
+  "name": "Fugu USB Terminal",
+  "short_name": "USBTerm",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/906/906343.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
